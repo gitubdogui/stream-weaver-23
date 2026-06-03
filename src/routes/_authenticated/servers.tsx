@@ -10,7 +10,8 @@ export const Route = createFileRoute("/_authenticated/servers")({
   component: ServersPage,
 });
 
-function Bar({ value, tone = "primary" as "primary" | "success" | "warning" | "destructive" }) {
+type Tone = "primary" | "success" | "warning" | "destructive";
+function Bar({ value, tone = "primary" }: { value: number; tone?: Tone }) {
   const toneCls = { primary: "bg-primary", success: "bg-success", warning: "bg-warning", destructive: "bg-destructive" };
   const finalTone = value > 80 ? "destructive" : value > 60 ? "warning" : tone;
   return (
