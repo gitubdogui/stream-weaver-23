@@ -9,38 +9,221 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedVodRouteImport } from './routes/_authenticated/vod'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedStreamsRouteImport } from './routes/_authenticated/streams'
+import { Route as AuthenticatedStatisticsRouteImport } from './routes/_authenticated/statistics'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedServersRouteImport } from './routes/_authenticated/servers'
+import { Route as AuthenticatedSeriesRouteImport } from './routes/_authenticated/series'
+import { Route as AuthenticatedResellersRouteImport } from './routes/_authenticated/resellers'
+import { Route as AuthenticatedPackagesRouteImport } from './routes/_authenticated/packages'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
+import { Route as AuthenticatedApiDocsRouteImport } from './routes/_authenticated/api-docs'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedVodRoute = AuthenticatedVodRouteImport.update({
+  id: '/vod',
+  path: '/vod',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedStreamsRoute = AuthenticatedStreamsRouteImport.update({
+  id: '/streams',
+  path: '/streams',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedStatisticsRoute = AuthenticatedStatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedServersRoute = AuthenticatedServersRouteImport.update({
+  id: '/servers',
+  path: '/servers',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSeriesRoute = AuthenticatedSeriesRouteImport.update({
+  id: '/series',
+  path: '/series',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedResellersRoute = AuthenticatedResellersRouteImport.update({
+  id: '/resellers',
+  path: '/resellers',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPackagesRoute = AuthenticatedPackagesRouteImport.update({
+  id: '/packages',
+  path: '/packages',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCategoriesRoute = AuthenticatedCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedApiDocsRoute = AuthenticatedApiDocsRouteImport.update({
+  id: '/api-docs',
+  path: '/api-docs',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/api-docs': typeof AuthenticatedApiDocsRoute
+  '/categories': typeof AuthenticatedCategoriesRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/packages': typeof AuthenticatedPackagesRoute
+  '/resellers': typeof AuthenticatedResellersRoute
+  '/series': typeof AuthenticatedSeriesRoute
+  '/servers': typeof AuthenticatedServersRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/statistics': typeof AuthenticatedStatisticsRoute
+  '/streams': typeof AuthenticatedStreamsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/vod': typeof AuthenticatedVodRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/api-docs': typeof AuthenticatedApiDocsRoute
+  '/categories': typeof AuthenticatedCategoriesRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/packages': typeof AuthenticatedPackagesRoute
+  '/resellers': typeof AuthenticatedResellersRoute
+  '/series': typeof AuthenticatedSeriesRoute
+  '/servers': typeof AuthenticatedServersRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/statistics': typeof AuthenticatedStatisticsRoute
+  '/streams': typeof AuthenticatedStreamsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/vod': typeof AuthenticatedVodRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authenticated/api-docs': typeof AuthenticatedApiDocsRoute
+  '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/packages': typeof AuthenticatedPackagesRoute
+  '/_authenticated/resellers': typeof AuthenticatedResellersRoute
+  '/_authenticated/series': typeof AuthenticatedSeriesRoute
+  '/_authenticated/servers': typeof AuthenticatedServersRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/statistics': typeof AuthenticatedStatisticsRoute
+  '/_authenticated/streams': typeof AuthenticatedStreamsRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/vod': typeof AuthenticatedVodRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/api-docs'
+    | '/categories'
+    | '/dashboard'
+    | '/packages'
+    | '/resellers'
+    | '/series'
+    | '/servers'
+    | '/settings'
+    | '/statistics'
+    | '/streams'
+    | '/users'
+    | '/vod'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/api-docs'
+    | '/categories'
+    | '/dashboard'
+    | '/packages'
+    | '/resellers'
+    | '/series'
+    | '/servers'
+    | '/settings'
+    | '/statistics'
+    | '/streams'
+    | '/users'
+    | '/vod'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login'
+    | '/_authenticated/api-docs'
+    | '/_authenticated/categories'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/packages'
+    | '/_authenticated/resellers'
+    | '/_authenticated/series'
+    | '/_authenticated/servers'
+    | '/_authenticated/settings'
+    | '/_authenticated/statistics'
+    | '/_authenticated/streams'
+    | '/_authenticated/users'
+    | '/_authenticated/vod'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +231,132 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/vod': {
+      id: '/_authenticated/vod'
+      path: '/vod'
+      fullPath: '/vod'
+      preLoaderRoute: typeof AuthenticatedVodRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/streams': {
+      id: '/_authenticated/streams'
+      path: '/streams'
+      fullPath: '/streams'
+      preLoaderRoute: typeof AuthenticatedStreamsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/statistics': {
+      id: '/_authenticated/statistics'
+      path: '/statistics'
+      fullPath: '/statistics'
+      preLoaderRoute: typeof AuthenticatedStatisticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/servers': {
+      id: '/_authenticated/servers'
+      path: '/servers'
+      fullPath: '/servers'
+      preLoaderRoute: typeof AuthenticatedServersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/series': {
+      id: '/_authenticated/series'
+      path: '/series'
+      fullPath: '/series'
+      preLoaderRoute: typeof AuthenticatedSeriesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/resellers': {
+      id: '/_authenticated/resellers'
+      path: '/resellers'
+      fullPath: '/resellers'
+      preLoaderRoute: typeof AuthenticatedResellersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/packages': {
+      id: '/_authenticated/packages'
+      path: '/packages'
+      fullPath: '/packages'
+      preLoaderRoute: typeof AuthenticatedPackagesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/categories': {
+      id: '/_authenticated/categories'
+      path: '/categories'
+      fullPath: '/categories'
+      preLoaderRoute: typeof AuthenticatedCategoriesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/api-docs': {
+      id: '/_authenticated/api-docs'
+      path: '/api-docs'
+      fullPath: '/api-docs'
+      preLoaderRoute: typeof AuthenticatedApiDocsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedApiDocsRoute: typeof AuthenticatedApiDocsRoute
+  AuthenticatedCategoriesRoute: typeof AuthenticatedCategoriesRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedPackagesRoute: typeof AuthenticatedPackagesRoute
+  AuthenticatedResellersRoute: typeof AuthenticatedResellersRoute
+  AuthenticatedSeriesRoute: typeof AuthenticatedSeriesRoute
+  AuthenticatedServersRoute: typeof AuthenticatedServersRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStatisticsRoute: typeof AuthenticatedStatisticsRoute
+  AuthenticatedStreamsRoute: typeof AuthenticatedStreamsRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedVodRoute: typeof AuthenticatedVodRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedApiDocsRoute: AuthenticatedApiDocsRoute,
+  AuthenticatedCategoriesRoute: AuthenticatedCategoriesRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedPackagesRoute: AuthenticatedPackagesRoute,
+  AuthenticatedResellersRoute: AuthenticatedResellersRoute,
+  AuthenticatedSeriesRoute: AuthenticatedSeriesRoute,
+  AuthenticatedServersRoute: AuthenticatedServersRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStatisticsRoute: AuthenticatedStatisticsRoute,
+  AuthenticatedStreamsRoute: AuthenticatedStreamsRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedVodRoute: AuthenticatedVodRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
