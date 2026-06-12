@@ -2,7 +2,9 @@
 
 Panel administrativo moderno (dark, responsive) inspirado en plataformas tipo Xtream UI, construido desde cero con **TanStack Start + React 19 + Vite 7 + Tailwind v4 + shadcn/ui**.
 
-> Actualmente es un **frontend completo con datos simulados (mock)**. La arquitectura está lista para conectar un backend real.
+> Estado actual: **frontend completo con datos simulados (mock)**. El proyecto compila limpio (`tsc --noEmit` y `npm run build` sin errores) y está listo para conectar un backend real.
+>
+> Nota: este proyecto usa **TanStack Start (SSR)**, por lo que no existe un `index.html` en la raíz — el HTML se genera desde `src/routes/__root.tsx`.
 
 ---
 
@@ -65,7 +67,6 @@ Cualquier usuario que contenga `reseller` en el nombre entra con rol revendedor.
 │   │       └── settings.tsx
 │   └── styles.css          # Tokens del design system (OKLCH)
 ├── docs/                   # Documentación adicional
-├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
 ├── .env.example
