@@ -65,7 +65,6 @@ Cualquier usuario que contenga `reseller` en el nombre entra con rol revendedor.
 │   │       └── settings.tsx
 │   └── styles.css          # Tokens del design system (OKLCH)
 ├── docs/                   # Documentación adicional
-├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
 ├── .env.example
