@@ -4,7 +4,7 @@ import { Radio, Lock, User, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { mockAuth } from "@/lib/mock-auth";
+import { authService } from "@/lib/auth-service";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Login — StreamPanel" }] }),
@@ -13,20 +13,24 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [user, setUser] = useState("admin");
-  const [password, setPassword] = useState("admin");
+  const [user, setUser] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = (e: FormEvent) => {
+  const demo = authService.getDemoCredentials();
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      const s = mockAuth.login(user.trim(), password);
-      if (!s) { setError("Credenciales inválidas"); setLoading(false); return; }
-      navigate({ to: "/dashboard" });
-    }, 400);
+    const res = await authService.login(user, password);
+    setLoading(false);
+    if (!res.ok) {
+      setError(res.error ?? "No se pudo iniciar sesión");
+      return;
+    }
+    navigate({ to: "/dashboard" });
   };
 
   return (
@@ -58,14 +62,31 @@ function LoginPage() {
               <Label htmlFor="user">Usuario</Label>
               <div className="relative">
                 <User className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input id="user" value={user} onChange={(e) => setUser(e.target.value)} className="pl-9" autoComplete="username" />
+                <Input
+                  id="user"
+                  value={user}
+                  onChange={(e) => setUser(e.target.value)}
+                  placeholder="tu-usuario"
+                  className="pl-9"
+                  autoComplete="username"
+                  required
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pwd">Contraseña</Label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input id="pwd" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-9" autoComplete="current-password" />
+                <Input
+                  id="pwd"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-9"
+                  autoComplete="current-password"
+                  required
+                />
               </div>
             </div>
 
@@ -82,9 +103,17 @@ function LoginPage() {
           </div>
         </div>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Demo: usuario <code className="text-foreground">admin</code> / contraseña <code className="text-foreground">admin</code>
-        </p>
+        <div className="mt-4 rounded-lg border border-dashed bg-muted/30 p-3 text-center text-[11px] text-muted-foreground">
+          <p className="mb-1 font-medium uppercase tracking-wider">Credenciales de demo (mock)</p>
+          <ul className="space-y-0.5">
+            {demo.map((d) => (
+              <li key={d.user}>
+                <code className="text-foreground">{d.user}</code> / <code className="text-foreground">{d.password}</code>
+                <span className="ml-1 opacity-70">— {d.role}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
