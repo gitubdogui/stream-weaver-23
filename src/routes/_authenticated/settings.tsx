@@ -19,7 +19,7 @@ function SettingsPage() {
         <section className="rounded-xl border bg-card p-6">
           <h2 className="text-base font-semibold">General</h2>
           <div className="mt-4 space-y-4">
-            <div className="space-y-1.5"><Label>Nombre del panel</Label><Input defaultValue="StreamPanel" /></div>
+            <div className="space-y-1.5"><Label>Nombre del panel</Label><Input defaultValue="StreamWeaver Pro" /></div>
             <div className="space-y-1.5"><Label>URL pública</Label><Input defaultValue="https://panel.mi-dominio.tv" /></div>
             <div className="space-y-1.5"><Label>Zona horaria</Label><Input defaultValue="America/Mexico_City" /></div>
           </div>
