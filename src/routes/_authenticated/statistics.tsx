@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { connectionLogs, lines, streams } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/statistics")({
-  head: () => ({ meta: [{ title: "Estadísticas — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Estadísticas — StreamWeaver Pro" }] }),
   component: StatsPage,
 });
 

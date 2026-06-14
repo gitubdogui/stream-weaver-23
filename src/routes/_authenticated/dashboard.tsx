@@ -10,7 +10,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { dashboardStats, hourlyConnections, lines, connectionLogs } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — StreamWeaver Pro" }] }),
   component: DashboardPage,
 });
 

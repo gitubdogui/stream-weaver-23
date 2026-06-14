@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Configuración — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Configuración — StreamWeaver Pro" }] }),
   component: SettingsPage,
 });
 

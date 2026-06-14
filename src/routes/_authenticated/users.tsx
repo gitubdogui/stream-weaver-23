@@ -18,7 +18,7 @@ import {
 import { lines as initial, type Line, type UserStatus } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/users")({
-  head: () => ({ meta: [{ title: "Usuarios — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Usuarios — StreamWeaver Pro" }] }),
   component: UsersPage,
 });
 

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { vods } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/vod")({
-  head: () => ({ meta: [{ title: "VOD — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "VOD — StreamWeaver Pro" }] }),
   component: VodPage,
 });
 

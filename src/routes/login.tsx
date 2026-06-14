@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { authService } from "@/lib/auth-service";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Login — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Login — StreamWeaver Pro" }] }),
   component: LoginPage,
 });
 
