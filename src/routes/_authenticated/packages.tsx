@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/packages")({
-  head: () => ({ meta: [{ title: "Paquetes — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Paquetes — StreamWeaver Pro" }] }),
   component: PackagesPage,
 });
 

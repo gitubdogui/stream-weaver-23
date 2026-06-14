@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { resellers } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/resellers")({
-  head: () => ({ meta: [{ title: "Revendedores — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Revendedores — StreamWeaver Pro" }] }),
   component: ResellersPage,
 });
 

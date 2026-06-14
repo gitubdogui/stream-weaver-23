@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { streams as initial, type Stream } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/streams")({
-  head: () => ({ meta: [{ title: "Streams en vivo — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Streams en vivo — StreamWeaver Pro" }] }),
   component: StreamsPage,
 });
 

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/api-docs")({
-  head: () => ({ meta: [{ title: "API & Docs — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "API & Docs — StreamWeaver Pro" }] }),
   component: ApiDocs,
 });
 

@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { categories } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/categories")({
-  head: () => ({ meta: [{ title: "Categorías — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Categorías — StreamWeaver Pro" }] }),
   component: CategoriesPage,
 });
 

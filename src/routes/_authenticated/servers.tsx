@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { servers } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/servers")({
-  head: () => ({ meta: [{ title: "Servidores — StreamPanel" }] }),
+  head: () => ({ meta: [{ title: "Servidores — StreamWeaver Pro" }] }),
   component: ServersPage,
 });
 
