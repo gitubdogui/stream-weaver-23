@@ -8,6 +8,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { mockAuth } from "@/lib/mock-auth";
+import { branding, currentYear } from "@/config/branding";
 
 const groups = [
   {
@@ -60,8 +61,12 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div className="leading-tight">
-              <p className="text-sm font-semibold">StreamPanel</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Admin v1.0</p>
+              <p className="text-sm font-semibold">
+                {branding.logoText}<span className="text-primary"> {branding.logoAccent}</span>
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Admin v{branding.version}
+              </p>
             </div>
           )}
         </div>
@@ -106,6 +111,11 @@ export function AppSidebar() {
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Cerrar sesión</span>}
         </SidebarMenuButton>
+        {!collapsed && (
+          <p className="mt-2 text-center text-[10px] text-muted-foreground">
+            © {currentYear()} {branding.copyrightHolder}
+          </p>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
