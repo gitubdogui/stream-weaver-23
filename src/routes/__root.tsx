@@ -11,6 +11,13 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { branding } from "../config/branding";
+
+const FAVICON_SVG =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3B82F6"/><stop offset="100%" stop-color="#8B5CF6"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#g)"/><path d="M16 40c6-2 10-6 12-14 2 8 6 12 12 14-6 2-10 6-12 14-2-8-6-12-12-14z" fill="white"/></svg>`,
+  );
 
 function NotFoundComponent() {
   return (
@@ -77,24 +84,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "wolfpan" },
-      { name: "description", content: "wolfp" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "wolfpan" },
-      { property: "og:description", content: "wolfp" },
+      { title: branding.appName },
+      { name: "description", content: branding.slogan },
+      { name: "author", content: branding.appName },
+      { name: "theme-color", content: branding.primaryColor },
+      { property: "og:title", content: branding.appName },
+      { property: "og:description", content: branding.slogan },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "wolfpan" },
-      { name: "twitter:description", content: "wolfp" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6654d597-0005-44eb-a919-1f80b1a4d9c0" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6654d597-0005-44eb-a919-1f80b1a4d9c0" },
+      { name: "twitter:title", content: branding.appName },
+      { name: "twitter:description", content: branding.slogan },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/svg+xml", href: FAVICON_SVG },
     ],
   }),
   shellComponent: RootShell,

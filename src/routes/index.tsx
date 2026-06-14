@@ -2,6 +2,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Radio } from "lucide-react";
 import { authService } from "@/lib/auth-service";
+import { branding } from "@/config/branding";
 
 export const Route = createFileRoute("/")({
   beforeLoad: () => {
@@ -30,7 +31,7 @@ function RootRedirect() {
         >
           <Radio className="h-6 w-6 text-primary-foreground" />
         </div>
-        <p className="text-sm">Cargando StreamPanel…</p>
+        <p className="text-sm">Cargando {branding.appName}…</p>
       </div>
     </div>
   );
