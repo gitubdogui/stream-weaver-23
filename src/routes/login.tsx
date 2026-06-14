@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Radio, Lock, User, ShieldCheck } from "lucide-react";
+import { Radio, Lock, User, ShieldCheck, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/lib/auth-service";
+import { branding } from "@/config/branding";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Login — StreamWeaver Pro" }] }),
