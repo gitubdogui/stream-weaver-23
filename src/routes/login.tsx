@@ -48,8 +48,10 @@ function LoginPage() {
             <Radio className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="leading-tight">
-            <p className="text-lg font-semibold">StreamPanel</p>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Admin Console</p>
+            <p className="text-lg font-semibold">
+              {branding.logoText}<span className="text-primary"> {branding.logoAccent}</span>
+            </p>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{branding.slogan}</p>
           </div>
         </div>
 
@@ -103,9 +105,15 @@ function LoginPage() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-lg border border-dashed bg-muted/30 p-3 text-center text-[11px] text-muted-foreground">
-          <p className="mb-1 font-medium uppercase tracking-wider">Credenciales de demo (mock)</p>
-          <ul className="space-y-0.5">
+        <details className="mt-4 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium uppercase tracking-wider">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-warning" />
+              Demo Access — remove in production
+            </span>
+            <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+          </summary>
+          <ul className="mt-2 space-y-0.5 text-center">
             {demo.map((d) => (
               <li key={d.user}>
                 <code className="text-foreground">{d.user}</code> / <code className="text-foreground">{d.password}</code>
@@ -113,7 +121,11 @@ function LoginPage() {
               </li>
             ))}
           </ul>
-        </div>
+        </details>
+
+        <p className="mt-4 text-center text-[10px] text-muted-foreground">
+          © {new Date().getFullYear()} {branding.copyrightHolder} · v{branding.version}
+        </p>
       </div>
     </div>
   );
