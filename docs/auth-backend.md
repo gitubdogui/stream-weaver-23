@@ -9,32 +9,42 @@ Este documento describe cómo está preparada la autenticación de **StreamWeave
 | Pieza | Estado | Ubicación |
 |------|--------|-----------|
 | UI de login | ✅ Real | `src/routes/login.tsx` |
-| Capa `authService` | ✅ Real, con dos modos | `src/lib/auth-service.ts` |
+| Capa `authService` (cliente) | ✅ Real, con dos modos | `src/lib/auth-service.ts` |
 | Modo `mock` (localStorage + usuarios demo) | ✅ Activo por defecto | `src/lib/auth-service.ts` |
-| Modo `api` (HTTP contra backend real) | ✅ Cliente listo, **backend pendiente** | `src/lib/auth-service.ts` |
+| Modo `api` (HTTP contra backend real) | ✅ | `src/lib/auth-service.ts` |
 | Esquema de base de datos (`User`) | ✅ Definido en Prisma | `prisma/schema.prisma` |
-| Servidor HTTP / endpoints `/api/auth/*` | ❌ **Pendiente** (proyecto separado o serverless) | — |
-| Hash de contraseñas (`bcrypt`) | ❌ **Pendiente** (se hace en el backend) | — |
-| Emisión/validación de JWT | ❌ **Pendiente** | — |
+| Endpoints `/api/auth/login`, `/logout`, `/me` | ✅ Implementados | `src/routes/api/auth/*.ts` |
+| Hash de contraseñas (`bcryptjs`) | ✅ | `src/lib/server/auth.server.ts` |
+| Emisión/validación de JWT + cookie httpOnly | ✅ | `src/lib/server/auth.server.ts` |
+| Seed admin inicial | ✅ | `prisma/seed.ts` |
 
-> El frontend **no necesita cambios** cuando se conecte el backend real. Sólo se cambia `VITE_AUTH_MODE=mock` por `VITE_AUTH_MODE=api`.
+> ⚠️ Los endpoints requieren un runtime **Node.js** (VPS, PM2, `npm run preview`).
+> Prisma + bcryptjs + jsonwebtoken **no** son compatibles con Cloudflare Workers.
+> Para deploy edge, separar el backend en otro servicio.
 
 ---
 
 ## 2. Cambiar entre modos
 
-En `.env`:
+`VITE_AUTH_MODE=mock` sigue siendo el valor **por defecto** para no romper la
+demo. Cuando tengas la base de datos y el admin sembrado:
 
 ```env
 # Modo demo (sin backend)
 VITE_AUTH_MODE=mock
 
-# Modo producción (requiere backend corriendo)
+# Modo producción (mismo origen, usa /api/auth/*)
 VITE_AUTH_MODE=api
-VITE_API_BASE_URL=https://api.tu-dominio.com/api
+VITE_API_BASE_URL=/api
 ```
 
-Tras cambiar el modo: `npm run build && npm run preview` (o `npm run dev`).
+Pasos:
+
+1. Configurar `DATABASE_URL` y `JWT_SECRET` en `.env`.
+2. `npm run db:migrate` (crea la tabla `users`).
+3. Definir `ADMIN_*` en `.env` y ejecutar `npm run seed`.
+4. Cambiar `VITE_AUTH_MODE=api`.
+5. `npm run build && npm run preview` (o `pm2 restart`).
 
 ---
 
