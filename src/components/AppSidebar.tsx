@@ -100,8 +100,8 @@ export function AppSidebar() {
       <SidebarFooter className="border-t p-3">
         {!collapsed && session && (
           <div className="mb-2 rounded-lg bg-sidebar-accent px-3 py-2">
-            <p className="text-xs font-medium">{session.user}</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{session.role}</p>
+            <p className="text-xs font-medium">{session.user.name}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{session.user.role}</p>
           </div>
         )}
         <SidebarMenuButton

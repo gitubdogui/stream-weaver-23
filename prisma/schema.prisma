@@ -1,0 +1,43 @@
+// StreamWeaver Pro — Esquema de base de datos
+// ORM: Prisma · Motor: PostgreSQL
+//
+// Esta es la base mínima para autenticación real.
+// Otros módulos (streams, VOD, paquetes, revendedores, etc.) se irán
+// añadiendo en migraciones posteriores y NO están incluidos todavía.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  reseller
+  support
+}
+
+enum UserStatus {
+  active
+  suspended
+}
+
+model User {
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  username      String     @unique
+  passwordHash  String     @map("password_hash")
+  role          UserRole   @default(support)
+  status        UserStatus @default(active)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt      @map("updated_at")
+  lastLogin     DateTime?  @map("last_login")
+
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
