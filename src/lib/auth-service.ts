@@ -46,8 +46,16 @@ export interface LoginResult {
 // === Config ================================================================
 const AUTH_MODE: "mock" | "api" =
   (import.meta.env.VITE_AUTH_MODE as "mock" | "api") ?? "mock";
+// Base URL del backend. Por defecto vacío = mismo origen (las rutas server de
+// TanStack Start viven en /api/auth/*). Solo definir VITE_API_BASE_URL si el
+// backend está en otro dominio (ej: https://api.tu-dominio.com).
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT ?? 15000);
+
+// Endpoints absolutos — siempre bajo /api/auth/* (server routes de TanStack Start).
+const EP_LOGIN  = "/api/auth/login";
+const EP_LOGOUT = "/api/auth/logout";
+const EP_ME     = "/api/auth/me";
 
 // === MOCK: usuarios demo (NO usar en producción) ===========================
 const DEMO_USERS: Array<{ username: string; password: string; user: User }> = [
