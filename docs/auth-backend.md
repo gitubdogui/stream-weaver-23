@@ -33,10 +33,20 @@ demo. Cuando tengas la base de datos y el admin sembrado:
 # Modo demo (sin backend)
 VITE_AUTH_MODE=mock
 
-# Modo producción (mismo origen, usa /api/auth/*)
+# Modo producción (mismo origen, usa /api/auth/* automáticamente)
 VITE_AUTH_MODE=api
-VITE_API_BASE_URL=/api
+# VITE_API_BASE_URL solo si el backend está en otro dominio:
+# VITE_API_BASE_URL=https://api.tu-dominio.com
 ```
+
+Las rutas reales están implementadas como **server routes de TanStack Start** en:
+
+- `src/routes/api/auth/login.ts`   → `POST /api/auth/login`
+- `src/routes/api/auth/logout.ts`  → `POST /api/auth/logout`
+- `src/routes/api/auth/me.ts`      → `GET  /api/auth/me`
+
+Si en VPS responden `404`, rehaz el build (`npm run build && pm2 restart`)
+para que se regenere `routeTree.gen.ts` con esos archivos incluidos.
 
 Pasos:
 

@@ -46,8 +46,16 @@ export interface LoginResult {
 // === Config ================================================================
 const AUTH_MODE: "mock" | "api" =
   (import.meta.env.VITE_AUTH_MODE as "mock" | "api") ?? "mock";
+// Base URL del backend. Por defecto vacío = mismo origen (las rutas server de
+// TanStack Start viven en /api/auth/*). Solo definir VITE_API_BASE_URL si el
+// backend está en otro dominio (ej: https://api.tu-dominio.com).
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT ?? 15000);
+
+// Endpoints absolutos — siempre bajo /api/auth/* (server routes de TanStack Start).
+const EP_LOGIN  = "/api/auth/login";
+const EP_LOGOUT = "/api/auth/logout";
+const EP_ME     = "/api/auth/me";
 
 // === MOCK: usuarios demo (NO usar en producción) ===========================
 const DEMO_USERS: Array<{ username: string; password: string; user: User }> = [
@@ -130,7 +138,7 @@ async function loginMock(username: string, password: string): Promise<LoginResul
 // === API implementation ====================================================
 async function loginApi(username: string, password: string): Promise<LoginResult> {
   try {
-    const res = await apiFetch("/auth/login", {
+    const res = await apiFetch(EP_LOGIN, {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
@@ -149,7 +157,7 @@ async function loginApi(username: string, password: string): Promise<LoginResult
 
 async function logoutApi(token: string) {
   try {
-    await apiFetch("/auth/logout", {
+    await apiFetch(EP_LOGOUT, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -160,7 +168,7 @@ async function logoutApi(token: string) {
 
 async function getCurrentUserApi(token: string): Promise<User | null> {
   try {
-    const res = await apiFetch("/auth/me", {
+    const res = await apiFetch(EP_ME, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
