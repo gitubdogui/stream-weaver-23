@@ -138,7 +138,7 @@ async function loginMock(username: string, password: string): Promise<LoginResul
 // === API implementation ====================================================
 async function loginApi(username: string, password: string): Promise<LoginResult> {
   try {
-    const res = await apiFetch("/auth/login", {
+    const res = await apiFetch(EP_LOGIN, {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
@@ -157,7 +157,7 @@ async function loginApi(username: string, password: string): Promise<LoginResult
 
 async function logoutApi(token: string) {
   try {
-    await apiFetch("/auth/logout", {
+    await apiFetch(EP_LOGOUT, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -168,7 +168,7 @@ async function logoutApi(token: string) {
 
 async function getCurrentUserApi(token: string): Promise<User | null> {
   try {
-    const res = await apiFetch("/auth/me", {
+    const res = await apiFetch(EP_ME, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
