@@ -1,9 +1,11 @@
 // StreamWeaver Pro — Esquema de base de datos
 // ORM: Prisma · Motor: PostgreSQL
 //
-// Esta es la base mínima para autenticación real.
-// Otros módulos (streams, VOD, paquetes, revendedores, etc.) se irán
-// añadiendo en migraciones posteriores y NO están incluidos todavía.
+// `User`     → cuentas internas del panel (admin / reseller / support).
+// `Customer` → clientes finales del servicio de streaming (líneas IPTV).
+//
+// Otros módulos (streams, VOD, paquetes, etc.) se irán añadiendo en
+// migraciones posteriores y NO están incluidos todavía.
 
 generator client {
   provider = "prisma-client-js"
@@ -25,6 +27,12 @@ enum UserStatus {
   suspended
 }
 
+enum CustomerStatus {
+  active
+  expired
+  suspended
+}
+
 model User {
   id            String     @id @default(uuid())
   name          String
@@ -37,7 +45,34 @@ model User {
   updatedAt     DateTime   @updatedAt      @map("updated_at")
   lastLogin     DateTime?  @map("last_login")
 
+  // Clientes finales creados por este usuario (cuando es reseller).
+  customers     Customer[] @relation("ResellerCustomers")
+
   @@index([role])
   @@index([status])
   @@map("users")
+}
+
+model Customer {
+  id              String         @id @default(uuid())
+  client          String?        // Nombre visible del cliente final.
+  username        String         @unique
+  passwordHash    String?        @map("password_hash")
+  package         String         @default("Básico")
+  status          CustomerStatus @default(active)
+  expiresAt       DateTime?      @map("expires_at")
+  maxConnections  Int            @default(1)        @map("max_connections")
+  notes           String?
+
+  resellerId      String?        @map("reseller_id")
+  reseller        User?          @relation("ResellerCustomers", fields: [resellerId], references: [id], onDelete: SetNull)
+
+  deletedAt       DateTime?      @map("deleted_at")   // Soft delete.
+  createdAt       DateTime       @default(now())     @map("created_at")
+  updatedAt       DateTime       @updatedAt          @map("updated_at")
+
+  @@index([status])
+  @@index([resellerId])
+  @@index([deletedAt])
+  @@map("customers")
 }

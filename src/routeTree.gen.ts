@@ -24,6 +24,8 @@ import { Route as AuthenticatedPackagesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
 import { Route as AuthenticatedApiDocsRouteImport } from './routes/_authenticated/api-docs'
+import { Route as ApiUsersIndexRouteImport } from './routes/api/users/index'
+import { Route as ApiUsersIdRouteImport } from './routes/api/users/$id'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
@@ -102,6 +104,16 @@ const AuthenticatedApiDocsRoute = AuthenticatedApiDocsRouteImport.update({
   path: '/api-docs',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiUsersIndexRoute = ApiUsersIndexRouteImport.update({
+  id: '/api/users/',
+  path: '/api/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUsersIdRoute = ApiUsersIdRouteImport.update({
+  id: '/api/users/$id',
+  path: '/api/users/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
   id: '/api/auth/me',
   path: '/api/auth/me',
@@ -136,6 +148,8 @@ export interface FileRoutesByFullPath {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
+  '/api/users/': typeof ApiUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -155,6 +169,8 @@ export interface FileRoutesByTo {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
+  '/api/users': typeof ApiUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -176,6 +192,8 @@ export interface FileRoutesById {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
+  '/api/users/': typeof ApiUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -197,6 +215,8 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/users/$id'
+    | '/api/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -216,6 +236,8 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/users/$id'
+    | '/api/users'
   id:
     | '__root__'
     | '/'
@@ -236,6 +258,8 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/users/$id'
+    | '/api/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -245,6 +269,8 @@ export interface RootRouteChildren {
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
+  ApiUsersIdRoute: typeof ApiUsersIdRoute
+  ApiUsersIndexRoute: typeof ApiUsersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -354,6 +380,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApiDocsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/users/': {
+      id: '/api/users/'
+      path: '/api/users'
+      fullPath: '/api/users/'
+      preLoaderRoute: typeof ApiUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/users/$id': {
+      id: '/api/users/$id'
+      path: '/api/users/$id'
+      fullPath: '/api/users/$id'
+      preLoaderRoute: typeof ApiUsersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/me': {
       id: '/api/auth/me'
       path: '/api/auth/me'
@@ -419,6 +459,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
+  ApiUsersIdRoute: ApiUsersIdRoute,
+  ApiUsersIndexRoute: ApiUsersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
