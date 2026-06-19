@@ -14,9 +14,26 @@ Este documento describe cómo está preparada la autenticación de **StreamWeave
 | Modo `api` (HTTP contra backend real) | ✅ | `src/lib/auth-service.ts` |
 | Esquema de base de datos (`User`) | ✅ Definido en Prisma | `prisma/schema.prisma` |
 | Endpoints `/api/auth/login`, `/logout`, `/me` | ✅ Implementados | `src/routes/api/auth/*.ts` |
+| Endpoints `/api/users` (Customer CRUD)        | ✅ Implementados | `src/routes/api/users/*.ts` |
+| Endpoints `/api/resellers` (User panel CRUD, admin)| ✅ Implementados | `src/routes/api/resellers/*.ts` |
 | Hash de contraseñas (`bcryptjs`) | ✅ | `src/lib/server/auth.server.ts` |
 | Emisión/validación de JWT + cookie httpOnly | ✅ | `src/lib/server/auth.server.ts` |
 | Seed admin inicial | ✅ | `prisma/seed.ts` |
+
+### Permisos por rol
+
+| Endpoint                 | admin | reseller                 | support |
+|--------------------------|:-----:|:------------------------:|:-------:|
+| `GET    /api/users`      |  ✅   | ✅ (solo los suyos)      |   ✅    |
+| `POST   /api/users`      |  ✅   | ✅ (se asigna a sí mismo)|   ❌    |
+| `PATCH  /api/users/:id`  |  ✅   | ✅ (solo los suyos)      |   ❌    |
+| `DELETE /api/users/:id`  |  ✅   | ✅ (solo los suyos)      |   ❌    |
+| `GET    /api/resellers`  |  ✅   | ❌                       |   ❌    |
+| `POST   /api/resellers`  |  ✅   | ❌                       |   ❌    |
+| `PATCH  /api/resellers/:id`|✅   | ❌                       |   ❌    |
+| `DELETE /api/resellers/:id`|✅   | ❌                       |   ❌    |
+
+`passwordHash` **nunca** se devuelve al frontend (helper `sanitizeUser` + `select` explícito).
 
 > ⚠️ Los endpoints requieren un runtime **Node.js** (VPS, PM2, `npm run preview`).
 > Prisma + bcryptjs + jsonwebtoken **no** son compatibles con Cloudflare Workers.
