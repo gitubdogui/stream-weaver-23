@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Search, Pause, Play, Trash2, Download, Sparkles, RefreshCw } from "lucide-react";
+import { Plus, Search, Pause, Play, Trash2, Download, Sparkles, RefreshCw, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -93,7 +94,12 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await res.json()) as T;
 }
 
-// Convierte líneas mock locales a la forma `Customer` para el modo demo.
+function toIsoDate(s: string): string | null {
+  if (!s) return null;
+  // input type=date returns YYYY-MM-DD
+  return new Date(`${s}T00:00:00.000Z`).toISOString();
+}
+
 function mockToCustomers(): Customer[] {
   return mockLines.map((l) => ({
     id: l.id,
@@ -109,18 +115,25 @@ function mockToCustomers(): Customer[] {
 }
 
 // ---------------------------------------------------------------------------
-// Página
-// ---------------------------------------------------------------------------
 function UsersPage() {
   const isMock = authService.mode === "mock";
+  const session = authService.getSession();
+  const role = session?.user.role ?? "support";
+  const canWrite = role === "admin" || role === "reseller";
+
   const [data, setData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | CustomerStatus>("all");
-  const [open, setOpen] = useState(false);
+
+  const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<DraftCustomer>(EMPTY_DRAFT);
+
+  const [editing, setEditing] = useState<Customer | null>(null);
+  const [editDraft, setEditDraft] = useState<DraftCustomer>(EMPTY_DRAFT);
+  const [editSaving, setEditSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -133,7 +146,9 @@ function UsersPage() {
         setData(customers);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando usuarios");
+      const msg = err instanceof Error ? err.message : "Error cargando usuarios";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -155,9 +170,10 @@ function UsersPage() {
     [data, q, status]
   );
 
-  const patch = async (id: string, body: Partial<{ status: CustomerStatus }>) => {
+  const patch = async (id: string, body: Partial<{ status: CustomerStatus }>, successMsg?: string) => {
     if (isMock) {
       setData((d) => d.map((c) => (c.id === id ? { ...c, ...body } : c)));
+      if (successMsg) toast.success(successMsg);
       return;
     }
     try {
@@ -166,21 +182,29 @@ function UsersPage() {
         body: JSON.stringify(body),
       });
       setData((d) => d.map((c) => (c.id === id ? customer : c)));
+      if (successMsg) toast.success(successMsg);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo actualizar");
+      const msg = err instanceof Error ? err.message : "No se pudo actualizar";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
   const remove = async (id: string) => {
+    if (!confirm("¿Eliminar este cliente? Quedará archivado (soft delete).")) return;
     if (isMock) {
       setData((d) => d.filter((c) => c.id !== id));
+      toast.success("Cliente eliminado");
       return;
     }
     try {
       await api(`/api/users/${id}`, { method: "DELETE" });
       setData((d) => d.filter((c) => c.id !== id));
+      toast.success("Cliente eliminado");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo eliminar");
+      const msg = err instanceof Error ? err.message : "No se pudo eliminar";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -188,44 +212,85 @@ function UsersPage() {
     setSaving(true);
     setError(null);
     try {
+      const body = {
+        client: draft.client || null,
+        username: draft.username,
+        password: draft.password || null,
+        package: draft.package,
+        status: draft.status,
+        expiresAt: toIsoDate(draft.expiresAt),
+        maxConnections: draft.maxConnections,
+        notes: draft.notes || null,
+      };
       if (isMock) {
         const id = `ln_${String(data.length + 1).padStart(3, "0")}`;
         setData((d) => [
-          {
-            id,
-            client: draft.client || null,
-            username: draft.username,
-            package: draft.package,
-            status: draft.status,
-            expiresAt: draft.expiresAt ? new Date(draft.expiresAt).toISOString() : null,
-            maxConnections: draft.maxConnections,
-            resellerId: null,
-            notes: draft.notes || null,
-          },
+          { id, ...body, expiresAt: body.expiresAt, resellerId: null } as Customer,
           ...d,
         ]);
       } else {
         const { customer } = await api<{ customer: Customer }>("/api/users", {
           method: "POST",
-          body: JSON.stringify({
-            client: draft.client || null,
-            username: draft.username,
-            password: draft.password || null,
-            package: draft.package,
-            status: draft.status,
-            expiresAt: draft.expiresAt ? new Date(draft.expiresAt).toISOString() : null,
-            maxConnections: draft.maxConnections,
-            notes: draft.notes || null,
-          }),
+          body: JSON.stringify(body),
         });
         setData((d) => [customer, ...d]);
       }
-      setOpen(false);
+      setCreateOpen(false);
       setDraft(EMPTY_DRAFT);
+      toast.success("Cliente creado");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear");
+      const msg = err instanceof Error ? err.message : "No se pudo crear";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openEdit = (c: Customer) => {
+    setEditing(c);
+    setEditDraft({
+      client: c.client ?? "",
+      username: c.username,
+      password: "",
+      package: c.package,
+      status: c.status,
+      maxConnections: c.maxConnections,
+      expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString().slice(0, 10) : "",
+      notes: c.notes ?? "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    setEditSaving(true);
+    try {
+      const body: Record<string, unknown> = {
+        client: editDraft.client || null,
+        package: editDraft.package,
+        status: editDraft.status,
+        expiresAt: toIsoDate(editDraft.expiresAt),
+        maxConnections: editDraft.maxConnections,
+        notes: editDraft.notes || null,
+      };
+      if (editDraft.password) body.password = editDraft.password;
+      if (isMock) {
+        setData((d) => d.map((c) => (c.id === editing.id ? { ...c, ...body, expiresAt: body.expiresAt as string | null } as Customer : c)));
+      } else {
+        const { customer } = await api<{ customer: Customer }>(`/api/users/${editing.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        });
+        setData((d) => d.map((c) => (c.id === editing.id ? customer : c)));
+      }
+      toast.success("Cliente actualizado");
+      setEditing(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "No se pudo actualizar";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -245,7 +310,9 @@ function UsersPage() {
         description={
           isMock
             ? "Modo demo: datos simulados. Cambia VITE_AUTH_MODE=api para conectar al backend real."
-            : "Clientes finales del servicio de streaming."
+            : role === "reseller"
+              ? "Tus clientes finales (líneas)."
+              : "Clientes finales del servicio de streaming."
         }
         actions={
           <>
@@ -253,72 +320,24 @@ function UsersPage() {
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
             </Button>
             <Button variant="outline" size="sm" onClick={exportCsv}><Download className="h-4 w-4" /> Exportar</Button>
-            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setDraft(EMPTY_DRAFT); }}>
-              <DialogTrigger asChild>
-                <Button size="sm"><Plus className="h-4 w-4" /> Nuevo usuario</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Crear línea</DialogTitle>
-                  <DialogDescription>Configura los datos del nuevo cliente.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-2 sm:grid-cols-2">
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label>Nombre del cliente</Label>
-                    <Input value={draft.client} onChange={(e) => setDraft({ ...draft, client: e.target.value })} placeholder="Carlos Mendoza" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Usuario</Label>
-                    <div className="flex gap-2">
-                      <Input value={draft.username} onChange={(e) => setDraft({ ...draft, username: e.target.value })} />
-                      <Button type="button" variant="outline" size="icon" onClick={() => setDraft({ ...draft, ...genCredentials() })}>
-                        <Sparkles className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Contraseña (opcional)</Label>
-                    <Input value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Paquete</Label>
-                    <Select value={draft.package} onValueChange={(v) => setDraft({ ...draft, package: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {PACKAGES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Estado</Label>
-                    <Select value={draft.status} onValueChange={(v) => setDraft({ ...draft, status: v as CustomerStatus })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Activo</SelectItem>
-                        <SelectItem value="expired">Vencido</SelectItem>
-                        <SelectItem value="suspended">Suspendido</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Máx. conexiones</Label>
-                    <Input type="number" min={1} value={draft.maxConnections} onChange={(e) => setDraft({ ...draft, maxConnections: Number(e.target.value) })} />
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label>Fecha de vencimiento</Label>
-                    <Input type="date" value={draft.expiresAt} onChange={(e) => setDraft({ ...draft, expiresAt: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label>Notas</Label>
-                    <Input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Cliente VIP, observaciones..." />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancelar</Button>
-                  <Button onClick={create} disabled={saving || !draft.username.trim()}>{saving ? "Creando..." : "Crear"}</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            {canWrite && (
+              <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) setDraft(EMPTY_DRAFT); }}>
+                <DialogTrigger asChild>
+                  <Button size="sm"><Plus className="h-4 w-4" /> Nuevo usuario</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Crear línea</DialogTitle>
+                    <DialogDescription>Configura los datos del nuevo cliente.</DialogDescription>
+                  </DialogHeader>
+                  <CustomerForm draft={draft} setDraft={setDraft} mode="create" />
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancelar</Button>
+                    <Button onClick={create} disabled={saving || !draft.username.trim()}>{saving ? "Creando..." : "Crear"}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </>
         }
       />
@@ -374,18 +393,25 @@ function UsersPage() {
                 <TableCell><StatusBadge status={c.status} /></TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    {c.status === "active" ? (
-                      <Button size="icon" variant="ghost" title="Suspender" onClick={() => patch(c.id, { status: "suspended" })}>
+                    {canWrite && (
+                      <Button size="icon" variant="ghost" title="Editar" onClick={() => openEdit(c)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canWrite && (c.status === "active" ? (
+                      <Button size="icon" variant="ghost" title="Suspender" onClick={() => patch(c.id, { status: "suspended" }, "Cliente suspendido")}>
                         <Pause className="h-4 w-4 text-warning" />
                       </Button>
                     ) : (
-                      <Button size="icon" variant="ghost" title="Reactivar" onClick={() => patch(c.id, { status: "active" })}>
+                      <Button size="icon" variant="ghost" title="Reactivar" onClick={() => patch(c.id, { status: "active" }, "Cliente reactivado")}>
                         <Play className="h-4 w-4 text-success" />
                       </Button>
+                    ))}
+                    {canWrite && (
+                      <Button size="icon" variant="ghost" title="Eliminar" onClick={() => remove(c.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     )}
-                    <Button size="icon" variant="ghost" title="Eliminar" onClick={() => remove(c.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -400,6 +426,86 @@ function UsersPage() {
         </Table>
       </div>
       <p className="text-xs text-muted-foreground">{filtered.length} de {data.length} líneas{isMock ? " · modo demo" : ""}</p>
+
+      {/* Diálogo edición */}
+      <Dialog open={!!editing} onOpenChange={(v) => { if (!v) setEditing(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar cliente</DialogTitle>
+            <DialogDescription>Modifica los datos de {editing?.client ?? editing?.username}.</DialogDescription>
+          </DialogHeader>
+          <CustomerForm draft={editDraft} setDraft={setEditDraft} mode="edit" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)} disabled={editSaving}>Cancelar</Button>
+            <Button onClick={saveEdit} disabled={editSaving}>{editSaving ? "Guardando..." : "Guardar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+function CustomerForm({
+  draft, setDraft, mode,
+}: {
+  draft: DraftCustomer;
+  setDraft: (d: DraftCustomer) => void;
+  mode: "create" | "edit";
+}) {
+  return (
+    <div className="grid gap-4 py-2 sm:grid-cols-2">
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label>Nombre del cliente</Label>
+        <Input value={draft.client} onChange={(e) => setDraft({ ...draft, client: e.target.value })} placeholder="Carlos Mendoza" />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Usuario</Label>
+        <div className="flex gap-2">
+          <Input value={draft.username} disabled={mode === "edit"} onChange={(e) => setDraft({ ...draft, username: e.target.value })} />
+          {mode === "create" && (
+            <Button type="button" variant="outline" size="icon" onClick={() => setDraft({ ...draft, ...genCredentials() })}>
+              <Sparkles className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label>{mode === "edit" ? "Nueva contraseña (opcional)" : "Contraseña (opcional)"}</Label>
+        <Input value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} placeholder={mode === "edit" ? "Dejar vacío para no cambiar" : ""} />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Paquete</Label>
+        <Select value={draft.package} onValueChange={(v) => setDraft({ ...draft, package: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {PACKAGES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Estado</Label>
+        <Select value={draft.status} onValueChange={(v) => setDraft({ ...draft, status: v as CustomerStatus })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Activo</SelectItem>
+            <SelectItem value="expired">Vencido</SelectItem>
+            <SelectItem value="suspended">Suspendido</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Máx. conexiones</Label>
+        <Input type="number" min={1} max={99} value={draft.maxConnections} onChange={(e) => setDraft({ ...draft, maxConnections: Number(e.target.value) })} />
+      </div>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label>Fecha de vencimiento</Label>
+        <Input type="date" value={draft.expiresAt} onChange={(e) => setDraft({ ...draft, expiresAt: e.target.value })} />
+      </div>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label>Notas</Label>
+        <Input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Cliente VIP, observaciones..." />
+      </div>
     </div>
   );
 }

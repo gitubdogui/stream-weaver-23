@@ -25,7 +25,9 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
 import { Route as AuthenticatedApiDocsRouteImport } from './routes/_authenticated/api-docs'
 import { Route as ApiUsersIndexRouteImport } from './routes/api/users/index'
+import { Route as ApiResellersIndexRouteImport } from './routes/api/resellers/index'
 import { Route as ApiUsersIdRouteImport } from './routes/api/users/$id'
+import { Route as ApiResellersIdRouteImport } from './routes/api/resellers/$id'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
@@ -109,9 +111,19 @@ const ApiUsersIndexRoute = ApiUsersIndexRouteImport.update({
   path: '/api/users/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiResellersIndexRoute = ApiResellersIndexRouteImport.update({
+  id: '/api/resellers/',
+  path: '/api/resellers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUsersIdRoute = ApiUsersIdRouteImport.update({
   id: '/api/users/$id',
   path: '/api/users/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiResellersIdRoute = ApiResellersIdRouteImport.update({
+  id: '/api/resellers/$id',
+  path: '/api/resellers/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
@@ -148,7 +160,9 @@ export interface FileRoutesByFullPath {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/resellers/$id': typeof ApiResellersIdRoute
   '/api/users/$id': typeof ApiUsersIdRoute
+  '/api/resellers/': typeof ApiResellersIndexRoute
   '/api/users/': typeof ApiUsersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -169,7 +183,9 @@ export interface FileRoutesByTo {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/resellers/$id': typeof ApiResellersIdRoute
   '/api/users/$id': typeof ApiUsersIdRoute
+  '/api/resellers': typeof ApiResellersIndexRoute
   '/api/users': typeof ApiUsersIndexRoute
 }
 export interface FileRoutesById {
@@ -192,7 +208,9 @@ export interface FileRoutesById {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/resellers/$id': typeof ApiResellersIdRoute
   '/api/users/$id': typeof ApiUsersIdRoute
+  '/api/resellers/': typeof ApiResellersIndexRoute
   '/api/users/': typeof ApiUsersIndexRoute
 }
 export interface FileRouteTypes {
@@ -215,7 +233,9 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/resellers/$id'
     | '/api/users/$id'
+    | '/api/resellers/'
     | '/api/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -236,7 +256,9 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/resellers/$id'
     | '/api/users/$id'
+    | '/api/resellers'
     | '/api/users'
   id:
     | '__root__'
@@ -258,7 +280,9 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/resellers/$id'
     | '/api/users/$id'
+    | '/api/resellers/'
     | '/api/users/'
   fileRoutesById: FileRoutesById
 }
@@ -269,7 +293,9 @@ export interface RootRouteChildren {
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
+  ApiResellersIdRoute: typeof ApiResellersIdRoute
   ApiUsersIdRoute: typeof ApiUsersIdRoute
+  ApiResellersIndexRoute: typeof ApiResellersIndexRoute
   ApiUsersIndexRoute: typeof ApiUsersIndexRoute
 }
 
@@ -387,11 +413,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/resellers/': {
+      id: '/api/resellers/'
+      path: '/api/resellers'
+      fullPath: '/api/resellers/'
+      preLoaderRoute: typeof ApiResellersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/users/$id': {
       id: '/api/users/$id'
       path: '/api/users/$id'
       fullPath: '/api/users/$id'
       preLoaderRoute: typeof ApiUsersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/resellers/$id': {
+      id: '/api/resellers/$id'
+      path: '/api/resellers/$id'
+      fullPath: '/api/resellers/$id'
+      preLoaderRoute: typeof ApiResellersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/me': {
@@ -459,7 +499,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
+  ApiResellersIdRoute: ApiResellersIdRoute,
   ApiUsersIdRoute: ApiUsersIdRoute,
+  ApiResellersIndexRoute: ApiResellersIndexRoute,
   ApiUsersIndexRoute: ApiUsersIndexRoute,
 }
 export const routeTree = rootRouteImport
