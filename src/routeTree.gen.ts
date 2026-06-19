@@ -27,6 +27,7 @@ import { Route as AuthenticatedApiDocsRouteImport } from './routes/_authenticate
 import { Route as ApiUsersIndexRouteImport } from './routes/api/users/index'
 import { Route as ApiResellersIndexRouteImport } from './routes/api/resellers/index'
 import { Route as ApiUsersIdRouteImport } from './routes/api/users/$id'
+import { Route as ApiResellersIdRouteImport } from './routes/api/resellers/$id'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
@@ -120,6 +121,11 @@ const ApiUsersIdRoute = ApiUsersIdRouteImport.update({
   path: '/api/users/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiResellersIdRoute = ApiResellersIdRouteImport.update({
+  id: '/api/resellers/$id',
+  path: '/api/resellers/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
   id: '/api/auth/me',
   path: '/api/auth/me',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/resellers/$id': typeof ApiResellersIdRoute
   '/api/users/$id': typeof ApiUsersIdRoute
   '/api/resellers/': typeof ApiResellersIndexRoute
   '/api/users/': typeof ApiUsersIndexRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/resellers/$id': typeof ApiResellersIdRoute
   '/api/users/$id': typeof ApiUsersIdRoute
   '/api/resellers': typeof ApiResellersIndexRoute
   '/api/users': typeof ApiUsersIndexRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/resellers/$id': typeof ApiResellersIdRoute
   '/api/users/$id': typeof ApiUsersIdRoute
   '/api/resellers/': typeof ApiResellersIndexRoute
   '/api/users/': typeof ApiUsersIndexRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/resellers/$id'
     | '/api/users/$id'
     | '/api/resellers/'
     | '/api/users/'
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/resellers/$id'
     | '/api/users/$id'
     | '/api/resellers'
     | '/api/users'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/resellers/$id'
     | '/api/users/$id'
     | '/api/resellers/'
     | '/api/users/'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
+  ApiResellersIdRoute: typeof ApiResellersIdRoute
   ApiUsersIdRoute: typeof ApiUsersIdRoute
   ApiResellersIndexRoute: typeof ApiResellersIndexRoute
   ApiUsersIndexRoute: typeof ApiUsersIndexRoute
@@ -414,6 +427,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUsersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/resellers/$id': {
+      id: '/api/resellers/$id'
+      path: '/api/resellers/$id'
+      fullPath: '/api/resellers/$id'
+      preLoaderRoute: typeof ApiResellersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/me': {
       id: '/api/auth/me'
       path: '/api/auth/me'
@@ -479,6 +499,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
+  ApiResellersIdRoute: ApiResellersIdRoute,
   ApiUsersIdRoute: ApiUsersIdRoute,
   ApiResellersIndexRoute: ApiResellersIndexRoute,
   ApiUsersIndexRoute: ApiUsersIndexRoute,
