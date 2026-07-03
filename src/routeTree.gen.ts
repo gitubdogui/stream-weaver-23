@@ -31,6 +31,7 @@ import { Route as ApiResellersIdRouteImport } from './routes/api/resellers/$id'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
+import { Route as ApiResellersIdCreditsRouteImport } from './routes/api/resellers/$id.credits'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -141,6 +142,11 @@ const ApiAuthLoginRoute = ApiAuthLoginRouteImport.update({
   path: '/api/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiResellersIdCreditsRoute = ApiResellersIdCreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
+  getParentRoute: () => ApiResellersIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -160,10 +166,11 @@ export interface FileRoutesByFullPath {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
-  '/api/resellers/$id': typeof ApiResellersIdRoute
+  '/api/resellers/$id': typeof ApiResellersIdRouteWithChildren
   '/api/users/$id': typeof ApiUsersIdRoute
   '/api/resellers/': typeof ApiResellersIndexRoute
   '/api/users/': typeof ApiUsersIndexRoute
+  '/api/resellers/$id/credits': typeof ApiResellersIdCreditsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -183,10 +190,11 @@ export interface FileRoutesByTo {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
-  '/api/resellers/$id': typeof ApiResellersIdRoute
+  '/api/resellers/$id': typeof ApiResellersIdRouteWithChildren
   '/api/users/$id': typeof ApiUsersIdRoute
   '/api/resellers': typeof ApiResellersIndexRoute
   '/api/users': typeof ApiUsersIndexRoute
+  '/api/resellers/$id/credits': typeof ApiResellersIdCreditsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -208,10 +216,11 @@ export interface FileRoutesById {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
-  '/api/resellers/$id': typeof ApiResellersIdRoute
+  '/api/resellers/$id': typeof ApiResellersIdRouteWithChildren
   '/api/users/$id': typeof ApiUsersIdRoute
   '/api/resellers/': typeof ApiResellersIndexRoute
   '/api/users/': typeof ApiUsersIndexRoute
+  '/api/resellers/$id/credits': typeof ApiResellersIdCreditsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/api/users/$id'
     | '/api/resellers/'
     | '/api/users/'
+    | '/api/resellers/$id/credits'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/api/users/$id'
     | '/api/resellers'
     | '/api/users'
+    | '/api/resellers/$id/credits'
   id:
     | '__root__'
     | '/'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/api/users/$id'
     | '/api/resellers/'
     | '/api/users/'
+    | '/api/resellers/$id/credits'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -293,7 +305,7 @@ export interface RootRouteChildren {
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
-  ApiResellersIdRoute: typeof ApiResellersIdRoute
+  ApiResellersIdRoute: typeof ApiResellersIdRouteWithChildren
   ApiUsersIdRoute: typeof ApiUsersIdRoute
   ApiResellersIndexRoute: typeof ApiResellersIndexRoute
   ApiUsersIndexRoute: typeof ApiUsersIndexRoute
@@ -455,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/resellers/$id/credits': {
+      id: '/api/resellers/$id/credits'
+      path: '/credits'
+      fullPath: '/api/resellers/$id/credits'
+      preLoaderRoute: typeof ApiResellersIdCreditsRouteImport
+      parentRoute: typeof ApiResellersIdRoute
+    }
   }
 }
 
@@ -492,6 +511,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ApiResellersIdRouteChildren {
+  ApiResellersIdCreditsRoute: typeof ApiResellersIdCreditsRoute
+}
+
+const ApiResellersIdRouteChildren: ApiResellersIdRouteChildren = {
+  ApiResellersIdCreditsRoute: ApiResellersIdCreditsRoute,
+}
+
+const ApiResellersIdRouteWithChildren = ApiResellersIdRoute._addFileChildren(
+  ApiResellersIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -499,7 +530,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
-  ApiResellersIdRoute: ApiResellersIdRoute,
+  ApiResellersIdRoute: ApiResellersIdRouteWithChildren,
   ApiUsersIdRoute: ApiUsersIdRoute,
   ApiResellersIndexRoute: ApiResellersIndexRoute,
   ApiUsersIndexRoute: ApiUsersIndexRoute,
