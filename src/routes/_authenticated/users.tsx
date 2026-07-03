@@ -315,10 +315,8 @@ function UsersPage() {
         title="Usuarios / Líneas"
         description={
           isMock
-            ? "Modo demo: datos simulados. Cambia VITE_AUTH_MODE=api para conectar al backend real."
-            : role === "reseller"
-              ? "Tus clientes finales (líneas)."
-              : "Clientes finales del servicio de streaming."
+            ? "Modo demo: datos simulados."
+            : `${isAdmin ? "Todos los clientes finales." : "Clientes de tu árbol."} ${isAdmin ? "" : `Coste por alta: 1 crédito · Saldo: ${myCredits}`}`
         }
         actions={
           <>
@@ -339,7 +337,7 @@ function UsersPage() {
                   <CustomerForm draft={draft} setDraft={setDraft} mode="create" />
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancelar</Button>
-                    <Button onClick={create} disabled={saving || !draft.username.trim()}>{saving ? "Creando..." : "Crear"}</Button>
+                    <Button onClick={create} disabled={saving || !draft.username.trim() || noBalance}>{noBalance ? "Sin créditos" : saving ? "Creando..." : "Crear"}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
