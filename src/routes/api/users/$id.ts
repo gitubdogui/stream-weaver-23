@@ -1,12 +1,8 @@
 /**
  * /api/users/:id — actualización y soft-delete de un cliente final.
  *
- *   PATCH  /api/users/:id   → actualiza campos permitidos
+ *   PATCH  /api/users/:id   → actualiza (incluye reasignar resellerId dentro del árbol)
  *   DELETE /api/users/:id   → soft delete (deletedAt = now)
- *
- * Reseller: sólo puede tocar sus propios clientes.
- * Admin:    puede tocar cualquiera.
- * Support:  sólo lectura (no llega aquí).
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
@@ -22,31 +18,38 @@ const PatchBody = z.object({
   notes: z.string().max(2000).optional().nullable(),
 });
 
+const CUSTOMER_SELECT = {
+  id: true, client: true, username: true, package: true, status: true,
+  expiresAt: true, maxConnections: true, resellerId: true, notes: true,
+  createdAt: true, updatedAt: true,
+} as const;
+
 export const Route = createFileRoute("/api/users/$id")({
   server: {
     handlers: {
       PATCH: async ({ request, params }) => {
         try {
-          const [{ prisma }, { requireSession, requireRole }, auth] = await Promise.all([
+          const [{ prisma }, { requireSession }, auth, hierarchy] = await Promise.all([
             import("@/lib/server/prisma.server"),
             import("@/lib/server/require-auth.server"),
             import("@/lib/server/auth.server"),
+            import("@/lib/server/hierarchy.server"),
           ]);
           const session = await requireSession(request);
           if (session.error) return session.error;
-          const denied = requireRole(session.user, ["admin", "reseller"] as const);
-          if (denied) return denied;
+          if (session.user.role === "support") {
+            return Response.json({ error: "Permiso denegado" }, { status: 403 });
+          }
 
           const existing = await prisma.customer.findFirst({
             where: { id: params.id, deletedAt: null },
           });
           if (!existing) return Response.json({ error: "No encontrado" }, { status: 404 });
-          if (session.user.role === "reseller" && existing.resellerId !== session.user.id) {
+          if (!(await hierarchy.canManageCustomer(session.user, existing))) {
             return Response.json({ error: "Permiso denegado" }, { status: 403 });
           }
 
-          const json = await request.json().catch(() => null);
-          const parsed = PatchBody.safeParse(json);
+          const parsed = PatchBody.safeParse(await request.json().catch(() => null));
           if (!parsed.success) {
             return Response.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
           }
@@ -62,18 +65,25 @@ export const Route = createFileRoute("/api/users/$id")({
           if (data.password !== undefined && data.password !== null && data.password !== "") {
             patch.passwordHash = await auth.hashPassword(data.password);
           }
-          // Solo admin puede reasignar reseller.
-          if (data.resellerId !== undefined && session.user.role === "admin") {
-            patch.resellerId = data.resellerId;
+          // Reasignación de owner: admin o dentro del subtree del actor.
+          if (data.resellerId !== undefined) {
+            if (data.resellerId === null) {
+              if (session.user.role !== "admin") {
+                return Response.json({ error: "Solo admin puede desasignar owner" }, { status: 403 });
+              }
+              patch.resellerId = null;
+            } else if (session.user.role === "admin" || (await hierarchy.isInSubtree(session.user.id, data.resellerId))) {
+              patch.resellerId = data.resellerId;
+            } else {
+              return Response.json({ error: "resellerId fuera de tu árbol" }, { status: 403 });
+            }
           }
 
           const updated = await prisma.customer.update({
-            where: { id: params.id },
-            data: patch,
+            where: { id: params.id }, data: patch,
             select: {
-              id: true, client: true, username: true, package: true, status: true,
-              expiresAt: true, maxConnections: true, resellerId: true, notes: true,
-              createdAt: true, updatedAt: true,
+              ...CUSTOMER_SELECT,
+              reseller: { select: { id: true, name: true, username: true, role: true } },
             },
           });
           return Response.json({ customer: updated });
@@ -85,26 +95,27 @@ export const Route = createFileRoute("/api/users/$id")({
 
       DELETE: async ({ request, params }) => {
         try {
-          const [{ prisma }, { requireSession, requireRole }] = await Promise.all([
+          const [{ prisma }, { requireSession }, hierarchy] = await Promise.all([
             import("@/lib/server/prisma.server"),
             import("@/lib/server/require-auth.server"),
+            import("@/lib/server/hierarchy.server"),
           ]);
           const session = await requireSession(request);
           if (session.error) return session.error;
-          const denied = requireRole(session.user, ["admin", "reseller"] as const);
-          if (denied) return denied;
+          if (session.user.role === "support") {
+            return Response.json({ error: "Permiso denegado" }, { status: 403 });
+          }
 
           const existing = await prisma.customer.findFirst({
             where: { id: params.id, deletedAt: null },
           });
           if (!existing) return Response.json({ error: "No encontrado" }, { status: 404 });
-          if (session.user.role === "reseller" && existing.resellerId !== session.user.id) {
+          if (!(await hierarchy.canManageCustomer(session.user, existing))) {
             return Response.json({ error: "Permiso denegado" }, { status: 403 });
           }
 
           await prisma.customer.update({
-            where: { id: params.id },
-            data: { deletedAt: new Date() },
+            where: { id: params.id }, data: { deletedAt: new Date() },
           });
           return new Response(null, { status: 204 });
         } catch (err) {

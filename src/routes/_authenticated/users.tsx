@@ -29,6 +29,8 @@ export const Route = createFileRoute("/_authenticated/users")({
 // ---------------------------------------------------------------------------
 type CustomerStatus = "active" | "expired" | "suspended";
 
+interface ResellerInfo { id: string; name: string; username: string; role: string }
+
 interface Customer {
   id: string;
   client: string | null;
@@ -38,6 +40,7 @@ interface Customer {
   expiresAt: string | null;
   maxConnections: number;
   resellerId: string | null;
+  reseller?: ResellerInfo | null;
   notes: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -119,7 +122,10 @@ function UsersPage() {
   const isMock = authService.mode === "mock";
   const session = authService.getSession();
   const role = session?.user.role ?? "support";
-  const canWrite = role === "admin" || role === "reseller";
+  const canWrite = role !== "support";
+  const myCredits = session?.user.credits ?? 0;
+  const isAdmin = role === "admin";
+  const noBalance = !isAdmin && !isMock && myCredits < 1;
 
   const [data, setData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -309,10 +315,8 @@ function UsersPage() {
         title="Usuarios / Líneas"
         description={
           isMock
-            ? "Modo demo: datos simulados. Cambia VITE_AUTH_MODE=api para conectar al backend real."
-            : role === "reseller"
-              ? "Tus clientes finales (líneas)."
-              : "Clientes finales del servicio de streaming."
+            ? "Modo demo: datos simulados."
+            : `${isAdmin ? "Todos los clientes finales." : "Clientes de tu árbol."} ${isAdmin ? "" : `Coste por alta: 1 crédito · Saldo: ${myCredits}`}`
         }
         actions={
           <>
@@ -333,7 +337,7 @@ function UsersPage() {
                   <CustomerForm draft={draft} setDraft={setDraft} mode="create" />
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancelar</Button>
-                    <Button onClick={create} disabled={saving || !draft.username.trim()}>{saving ? "Creando..." : "Crear"}</Button>
+                    <Button onClick={create} disabled={saving || !draft.username.trim() || noBalance}>{noBalance ? "Sin créditos" : saving ? "Creando..." : "Crear"}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -370,6 +374,7 @@ function UsersPage() {
             <TableRow>
               <TableHead>Cliente</TableHead>
               <TableHead>Usuario</TableHead>
+              <TableHead>Dueño</TableHead>
               <TableHead>Paquete</TableHead>
               <TableHead>Conex.</TableHead>
               <TableHead>Vence</TableHead>
@@ -385,6 +390,7 @@ function UsersPage() {
                   {c.notes && <div className="text-xs text-muted-foreground">{c.notes}</div>}
                 </TableCell>
                 <TableCell><code className="text-xs">{c.username}</code></TableCell>
+                <TableCell className="text-xs text-muted-foreground">{c.reseller?.name ?? "—"}</TableCell>
                 <TableCell>{c.package}</TableCell>
                 <TableCell>{c.maxConnections}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -417,10 +423,10 @@ function UsersPage() {
               </TableRow>
             ))}
             {!loading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">Sin resultados</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">Sin resultados</TableCell></TableRow>
             )}
             {loading && (
-              <TableRow><TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">Cargando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">Cargando...</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

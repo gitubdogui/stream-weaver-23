@@ -1,11 +1,12 @@
 // StreamWeaver Pro — Esquema de base de datos
 // ORM: Prisma · Motor: PostgreSQL
 //
-// `User`     → cuentas internas del panel (admin / reseller / support).
-// `Customer` → clientes finales del servicio de streaming (líneas IPTV).
+// Jerarquía real de revendedores:
+//   admin → superreseller → reseller → subreseller → customer (cliente final)
 //
-// Otros módulos (streams, VOD, paquetes, etc.) se irán añadiendo en
-// migraciones posteriores y NO están incluidos todavía.
+// - `User` con parentId + credits: cuentas del panel encadenadas en árbol.
+// - `Customer` con resellerId: cliente final "consume" 1 crédito al crearse.
+// - `CreditTransaction`: log auditable de todos los movimientos de créditos.
 
 generator client {
   provider = "prisma-client-js"
@@ -18,8 +19,10 @@ datasource db {
 
 enum UserRole {
   admin
-  reseller
   support
+  superreseller
+  reseller
+  subreseller
 }
 
 enum UserStatus {
@@ -33,6 +36,15 @@ enum CustomerStatus {
   suspended
 }
 
+enum CreditTxKind {
+  admin_topup       // Admin inyecta créditos (sin descontar de nadie).
+  transfer_in       // Padre → hijo (hijo recibe).
+  transfer_out      // Hijo → padre (padre recupera).
+  customer_create   // Consumo por crear customer.
+  customer_refund   // Devolución al eliminar customer (opcional / admin).
+  adjust            // Ajuste manual del admin.
+}
+
 model User {
   id            String     @id @default(uuid())
   name          String
@@ -41,21 +53,33 @@ model User {
   passwordHash  String     @map("password_hash")
   role          UserRole   @default(support)
   status        UserStatus @default(active)
+  credits       Int        @default(0)
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt      @map("updated_at")
   lastLogin     DateTime?  @map("last_login")
 
-  // Clientes finales creados por este usuario (cuando es reseller).
+  // Jerarquía de revendedores (self-relation).
+  parentId      String?    @map("parent_id")
+  parent        User?      @relation("UserTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children      User[]     @relation("UserTree")
+
+  // Clientes finales creados por este usuario (owner directo).
   customers     Customer[] @relation("ResellerCustomers")
+
+  // Movimientos de créditos.
+  txAsActor     CreditTransaction[] @relation("CreditActor")
+  txAsFrom      CreditTransaction[] @relation("CreditFrom")
+  txAsTo        CreditTransaction[] @relation("CreditTo")
 
   @@index([role])
   @@index([status])
+  @@index([parentId])
   @@map("users")
 }
 
 model Customer {
   id              String         @id @default(uuid())
-  client          String?        // Nombre visible del cliente final.
+  client          String?
   username        String         @unique
   passwordHash    String?        @map("password_hash")
   package         String         @default("Básico")
@@ -64,6 +88,7 @@ model Customer {
   maxConnections  Int            @default(1)        @map("max_connections")
   notes           String?
 
+  // Dueño directo (super/reseller/subreseller). Admin puede reasignar.
   resellerId      String?        @map("reseller_id")
   reseller        User?          @relation("ResellerCustomers", fields: [resellerId], references: [id], onDelete: SetNull)
 
@@ -71,8 +96,38 @@ model Customer {
   createdAt       DateTime       @default(now())     @map("created_at")
   updatedAt       DateTime       @updatedAt          @map("updated_at")
 
+  transactions    CreditTransaction[]
+
   @@index([status])
   @@index([resellerId])
   @@index([deletedAt])
   @@map("customers")
+}
+
+model CreditTransaction {
+  id           String        @id @default(uuid())
+  actorId      String        @map("actor_id")
+  actor        User          @relation("CreditActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  fromUserId   String?       @map("from_user_id")
+  fromUser     User?         @relation("CreditFrom", fields: [fromUserId], references: [id], onDelete: SetNull)
+
+  toUserId     String?       @map("to_user_id")
+  toUser       User?         @relation("CreditTo", fields: [toUserId], references: [id], onDelete: SetNull)
+
+  customerId   String?       @map("customer_id")
+  customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  delta        Int           // magnitud (positiva) transferida/consumida
+  kind         CreditTxKind
+  reason       String?
+
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("credit_transactions")
 }
