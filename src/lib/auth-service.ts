@@ -17,7 +17,7 @@
 const STORAGE_KEY = "stream_panel_session";
 const EVENT_NAME = "auth:change";
 
-export type Role = "admin" | "reseller" | "support";
+export type Role = "admin" | "support" | "superreseller" | "reseller" | "subreseller";
 export type Status = "active" | "suspended";
 
 export interface User {
@@ -27,6 +27,8 @@ export interface User {
   username: string;
   role: Role;
   status: Status;
+  credits?: number;
+  parentId?: string | null;
   lastLogin?: string | null;
 }
 
