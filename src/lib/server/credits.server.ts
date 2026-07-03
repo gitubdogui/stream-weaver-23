@@ -14,12 +14,12 @@
  * usando `SELECT ... FOR UPDATE` sobre las filas afectadas para evitar
  * dobles gastos.
  */
-import type { Prisma, PrismaClient, User } from "@prisma/client";
+import type { Prisma, User } from "@prisma/client";
 import { prisma } from "./prisma.server";
 
 export const CUSTOMER_CREATION_COST = Number(process.env.CUSTOMER_CREATION_COST ?? 1);
 
-type Tx = Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
+type Tx = Prisma.TransactionClient;
 
 async function lockUserCredits(tx: Tx, userId: string): Promise<number> {
   const rows = await tx.$queryRaw<{ credits: number }[]>`
