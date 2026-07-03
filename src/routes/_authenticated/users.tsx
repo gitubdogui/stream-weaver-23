@@ -423,10 +423,10 @@ function UsersPage() {
               </TableRow>
             ))}
             {!loading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">Sin resultados</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">Sin resultados</TableCell></TableRow>
             )}
             {loading && (
-              <TableRow><TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">Cargando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">Cargando...</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
