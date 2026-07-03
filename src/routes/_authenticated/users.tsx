@@ -29,6 +29,8 @@ export const Route = createFileRoute("/_authenticated/users")({
 // ---------------------------------------------------------------------------
 type CustomerStatus = "active" | "expired" | "suspended";
 
+interface ResellerInfo { id: string; name: string; username: string; role: string }
+
 interface Customer {
   id: string;
   client: string | null;
@@ -38,6 +40,7 @@ interface Customer {
   expiresAt: string | null;
   maxConnections: number;
   resellerId: string | null;
+  reseller?: ResellerInfo | null;
   notes: string | null;
   createdAt?: string;
   updatedAt?: string;
