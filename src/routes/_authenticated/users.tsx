@@ -126,6 +126,8 @@ function UsersPage() {
   const myCredits = session?.user.credits ?? 0;
   const isAdmin = role === "admin";
   const noBalance = !isAdmin && !isMock && myCredits < 1;
+
+  const [data, setData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
