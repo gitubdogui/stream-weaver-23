@@ -32,6 +32,7 @@ import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
 import { Route as ApiResellersIdCreditsRouteImport } from './routes/api/resellers/$id.credits'
+import { Route as ApiResellersIdCreditsRouteImport } from './routes/api/resellers/$id.credits'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
