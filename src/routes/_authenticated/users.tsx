@@ -374,6 +374,7 @@ function UsersPage() {
             <TableRow>
               <TableHead>Cliente</TableHead>
               <TableHead>Usuario</TableHead>
+              <TableHead>Dueño</TableHead>
               <TableHead>Paquete</TableHead>
               <TableHead>Conex.</TableHead>
               <TableHead>Vence</TableHead>
@@ -389,6 +390,7 @@ function UsersPage() {
                   {c.notes && <div className="text-xs text-muted-foreground">{c.notes}</div>}
                 </TableCell>
                 <TableCell><code className="text-xs">{c.username}</code></TableCell>
+                <TableCell className="text-xs text-muted-foreground">{c.reseller?.name ?? "—"}</TableCell>
                 <TableCell>{c.package}</TableCell>
                 <TableCell>{c.maxConnections}</TableCell>
                 <TableCell className="text-muted-foreground">
