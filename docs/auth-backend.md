@@ -1,50 +1,74 @@
-# Autenticación — Backend real
+# Autenticación & Jerarquía de revendedores
 
-Este documento describe cómo está preparada la autenticación de **StreamWeaver Pro** y los pasos exactos para reemplazar el modo MOCK por un backend real con PostgreSQL + Prisma + JWT.
+Este documento describe la autenticación real y el nuevo modelo jerárquico
+con créditos de **StreamWeaver Pro**.
 
----
+## Jerarquía
 
-## 1. Estado actual
+```
+admin
+ └─ superreseller
+     └─ reseller
+         └─ subreseller
+             └─ customer (cliente final)
+```
 
-| Pieza | Estado | Ubicación |
-|------|--------|-----------|
-| UI de login | ✅ Real | `src/routes/login.tsx` |
-| Capa `authService` (cliente) | ✅ Real, con dos modos | `src/lib/auth-service.ts` |
-| Modo `mock` (localStorage + usuarios demo) | ✅ Activo por defecto | `src/lib/auth-service.ts` |
-| Modo `api` (HTTP contra backend real) | ✅ | `src/lib/auth-service.ts` |
-| Esquema de base de datos (`User`) | ✅ Definido en Prisma | `prisma/schema.prisma` |
-| Endpoints `/api/auth/login`, `/logout`, `/me` | ✅ Implementados | `src/routes/api/auth/*.ts` |
-| Endpoints `/api/users` (Customer CRUD)        | ✅ Implementados | `src/routes/api/users/*.ts` |
-| Endpoints `/api/resellers` (User panel CRUD, admin)| ✅ Implementados | `src/routes/api/resellers/*.ts` |
-| Hash de contraseñas (`bcryptjs`) | ✅ | `src/lib/server/auth.server.ts` |
-| Emisión/validación de JWT + cookie httpOnly | ✅ | `src/lib/server/auth.server.ts` |
-| Seed admin inicial | ✅ | `prisma/seed.ts` |
+- Cada `User` revendedor puede tener `parentId` apuntando a otro `User`.
+- Cada `User` revendedor tiene un saldo `credits`.
+- Cada `Customer` tiene `resellerId` (dueño directo).
+- Ningún usuario ve ni gestiona nada fuera de su propio subtree.
 
-### Permisos por rol
+### Roles y capacidad de creación
 
-| Endpoint                 | admin | reseller                 | support |
-|--------------------------|:-----:|:------------------------:|:-------:|
-| `GET    /api/users`      |  ✅   | ✅ (solo los suyos)      |   ✅    |
-| `POST   /api/users`      |  ✅   | ✅ (se asigna a sí mismo)|   ❌    |
-| `PATCH  /api/users/:id`  |  ✅   | ✅ (solo los suyos)      |   ❌    |
-| `DELETE /api/users/:id`  |  ✅   | ✅ (solo los suyos)      |   ❌    |
-| `GET    /api/resellers`  |  ✅   | ❌                       |   ❌    |
-| `POST   /api/resellers`  |  ✅   | ❌                       |   ❌    |
-| `PATCH  /api/resellers/:id`|✅   | ❌                       |   ❌    |
-| `DELETE /api/resellers/:id`|✅   | ❌                       |   ❌    |
+| Actor          | Puede crear                             |
+|----------------|-----------------------------------------|
+| admin          | admin, support, superreseller, reseller, subreseller |
+| superreseller  | reseller, subreseller                   |
+| reseller       | subreseller                             |
+| subreseller    | — (solo customers)                      |
+| support        | — (solo lectura)                        |
 
-`passwordHash` **nunca** se devuelve al frontend (helper `sanitizeUser` + `select` explícito).
+## Créditos
 
-> ⚠️ Los endpoints requieren un runtime **Node.js** (VPS, PM2, `npm run preview`).
-> Prisma + bcryptjs + jsonwebtoken **no** son compatibles con Cloudflare Workers.
-> Para deploy edge, separar el backend en otro servicio.
+- `admin` inyecta créditos sin descontarse (`admin_topup` / `adjust`).
+- Un padre transfiere de su saldo a un **hijo directo** (delta positivo).
+- Un padre puede devolver créditos desde un hijo directo (delta negativo) si el hijo tiene saldo.
+- Crear un `Customer` descuenta `CUSTOMER_CREATION_COST` (default `1`) al owner
+  (excepto admin). Sin saldo → 402 `Créditos insuficientes`.
+- Todos los movimientos se registran en `credit_transactions` (auditable).
 
----
+## Endpoints
 
-## 2. Cambiar entre modos
+### Auth
+- `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` (incluye `credits`, `parentId`).
 
-`VITE_AUTH_MODE=mock` sigue siendo el valor **por defecto** para no romper la
-demo. Cuando tengas la base de datos y el admin sembrado:
+### Users del panel (`/api/resellers`)
+- `GET  /api/resellers`  → filtra por subtree del actor. `?children=me` limita a hijos directos.
+- `POST /api/resellers`  → valida `canCreateRole`. Non-admin fija `parentId = actor.id`.
+   `initialCredits`: admin acredita gratis; padre transfiere de su saldo.
+- `PATCH /api/resellers/:id` · `DELETE /api/resellers/:id` (suspend).
+- `GET  /api/resellers/:id/credits` → últimos 50 movimientos.
+- `POST /api/resellers/:id/credits` `{ delta, reason }` → admin adjust / padre transfer.
+
+### Customers (`/api/users`)
+- `GET  /api/users`  → filtra por subtree.
+- `POST /api/users`  → owner = actor (o hijo directo si se pasa `resellerId`); descuenta créditos.
+- `PATCH /api/users/:id` → reasignación de `resellerId` solo dentro del árbol permitido.
+- `DELETE /api/users/:id` → soft delete (no reembolsa por defecto).
+
+## Migración VPS
+
+```bash
+git pull
+npx prisma migrate deploy   # aplica 20260703000000_hierarchy_credits
+npx prisma generate
+npm run build
+pm2 restart streamweaver
+```
+
+## Modos de auth
+
+
 
 ```env
 # Modo demo (sin backend)
