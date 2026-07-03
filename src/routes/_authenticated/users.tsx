@@ -122,9 +122,10 @@ function UsersPage() {
   const isMock = authService.mode === "mock";
   const session = authService.getSession();
   const role = session?.user.role ?? "support";
-  const canWrite = role === "admin" || role === "reseller";
-
-  const [data, setData] = useState<Customer[]>([]);
+  const canWrite = role !== "support";
+  const myCredits = session?.user.credits ?? 0;
+  const isAdmin = role === "admin";
+  const noBalance = !isAdmin && !isMock && myCredits < 1;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
