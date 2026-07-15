@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Search, Pause, Play, Trash2, Download, Sparkles, RefreshCw, Pencil } from "lucide-react";
+import { Plus, Search, Pause, Play, Trash2, Download, Sparkles, RefreshCw, Pencil, KeyRound, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -24,8 +25,6 @@ export const Route = createFileRoute("/_authenticated/users")({
   component: UsersPage,
 });
 
-// ---------------------------------------------------------------------------
-// Tipos compartidos con la API.
 // ---------------------------------------------------------------------------
 type CustomerStatus = "active" | "expired" | "suspended";
 
@@ -55,6 +54,18 @@ interface DraftCustomer {
   maxConnections: number;
   expiresAt: string;
   notes: string;
+  autoCredentials: boolean;
+}
+
+interface RevealCreds {
+  client: string | null;
+  username: string;
+  password: string;
+  package: string;
+  status: CustomerStatus;
+  expiresAt: string | null;
+  maxConnections: number;
+  title: string;
 }
 
 const EMPTY_DRAFT: DraftCustomer = {
@@ -66,17 +77,29 @@ const EMPTY_DRAFT: DraftCustomer = {
   maxConnections: 1,
   expiresAt: "2026-12-31",
   notes: "",
+  autoCredentials: true,
 };
 
 const PACKAGES = ["Básico", "Premium", "Full HD", "Sports", "Family"] as const;
 
-const genCredentials = () => ({
-  username: `cliente${Math.floor(1000 + Math.random() * 9000)}`,
-  password: Math.random().toString(36).slice(2, 10),
-});
+// Generador criptográficamente seguro (window.crypto).
+function secureRandom(bytes: number): string {
+  const arr = new Uint8Array(bytes);
+  (globalThis.crypto ?? window.crypto).getRandomValues(arr);
+  return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function genUsername(): string {
+  const suffix = secureRandom(3); // 6 hex chars
+  return `cli_${suffix}`;
+}
+function genPassword(): string {
+  // 12 chars, alfanumérico mixto — evita ambigüedades (0/O, 1/l).
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const arr = new Uint8Array(12);
+  (globalThis.crypto ?? window.crypto).getRandomValues(arr);
+  return Array.from(arr).map((b) => alphabet[b % alphabet.length]).join("");
+}
 
-// ---------------------------------------------------------------------------
-// API helpers
 // ---------------------------------------------------------------------------
 function authHeader(): HeadersInit {
   const session = authService.getSession();
@@ -99,7 +122,6 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 function toIsoDate(s: string): string | null {
   if (!s) return null;
-  // input type=date returns YYYY-MM-DD
   return new Date(`${s}T00:00:00.000Z`).toISOString();
 }
 
@@ -140,6 +162,15 @@ function UsersPage() {
   const [editing, setEditing] = useState<Customer | null>(null);
   const [editDraft, setEditDraft] = useState<DraftCustomer>(EMPTY_DRAFT);
   const [editSaving, setEditSaving] = useState(false);
+
+  // Modal para revelar credenciales UNA sola vez.
+  const [reveal, setReveal] = useState<RevealCreds | null>(null);
+
+  // Diálogo de reset de contraseña.
+  const [resetTarget, setResetTarget] = useState<Customer | null>(null);
+  const [resetAuto, setResetAuto] = useState(true);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -218,32 +249,52 @@ function UsersPage() {
     setSaving(true);
     setError(null);
     try {
+      // Si se pidió generar acceso automático y algún campo está vacío, lo rellenamos.
+      const useUsername = draft.username.trim() || (draft.autoCredentials ? genUsername() : "");
+      const usePassword = draft.password || (draft.autoCredentials ? genPassword() : "");
+      if (!useUsername) {
+        toast.error("Falta el usuario");
+        setSaving(false);
+        return;
+      }
       const body = {
         client: draft.client || null,
-        username: draft.username,
-        password: draft.password || null,
+        username: useUsername,
+        password: usePassword || null,
         package: draft.package,
         status: draft.status,
         expiresAt: toIsoDate(draft.expiresAt),
         maxConnections: draft.maxConnections,
         notes: draft.notes || null,
       };
+      let created: Customer;
       if (isMock) {
         const id = `ln_${String(data.length + 1).padStart(3, "0")}`;
-        setData((d) => [
-          { id, ...body, expiresAt: body.expiresAt, resellerId: null } as Customer,
-          ...d,
-        ]);
+        created = { id, ...body, expiresAt: body.expiresAt, resellerId: null } as Customer;
+        setData((d) => [created, ...d]);
       } else {
-        const { customer } = await api<{ customer: Customer }>("/api/users", {
+        const res = await api<{ customer: Customer }>("/api/users", {
           method: "POST",
           body: JSON.stringify(body),
         });
-        setData((d) => [customer, ...d]);
+        created = res.customer;
+        setData((d) => [created, ...d]);
       }
       setCreateOpen(false);
       setDraft(EMPTY_DRAFT);
       toast.success("Cliente creado");
+      if (usePassword) {
+        setReveal({
+          title: "Cliente creado",
+          client: created.client,
+          username: created.username,
+          password: usePassword,
+          package: created.package,
+          status: created.status,
+          expiresAt: created.expiresAt,
+          maxConnections: created.maxConnections,
+        });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "No se pudo crear";
       setError(msg);
@@ -264,6 +315,7 @@ function UsersPage() {
       maxConnections: c.maxConnections,
       expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString().slice(0, 10) : "",
       notes: c.notes ?? "",
+      autoCredentials: false,
     });
   };
 
@@ -280,23 +332,82 @@ function UsersPage() {
         notes: editDraft.notes || null,
       };
       if (editDraft.password) body.password = editDraft.password;
+      let updated: Customer;
       if (isMock) {
-        setData((d) => d.map((c) => (c.id === editing.id ? { ...c, ...body, expiresAt: body.expiresAt as string | null } as Customer : c)));
+        updated = { ...editing, ...body, expiresAt: body.expiresAt as string | null } as Customer;
+        setData((d) => d.map((c) => (c.id === editing.id ? updated : c)));
       } else {
-        const { customer } = await api<{ customer: Customer }>(`/api/users/${editing.id}`, {
+        const res = await api<{ customer: Customer }>(`/api/users/${editing.id}`, {
           method: "PATCH",
           body: JSON.stringify(body),
         });
-        setData((d) => d.map((c) => (c.id === editing.id ? customer : c)));
+        updated = res.customer;
+        setData((d) => d.map((c) => (c.id === editing.id ? updated : c)));
       }
       toast.success("Cliente actualizado");
       setEditing(null);
+      if (editDraft.password) {
+        setReveal({
+          title: "Contraseña actualizada",
+          client: updated.client,
+          username: updated.username,
+          password: editDraft.password,
+          package: updated.package,
+          status: updated.status,
+          expiresAt: updated.expiresAt,
+          maxConnections: updated.maxConnections,
+        });
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "No se pudo actualizar";
       setError(msg);
       toast.error(msg);
     } finally {
       setEditSaving(false);
+    }
+  };
+
+  const openReset = (c: Customer) => {
+    setResetTarget(c);
+    setResetAuto(true);
+    setResetPassword("");
+  };
+
+  const doReset = async () => {
+    if (!resetTarget) return;
+    const newPass = resetAuto ? genPassword() : resetPassword.trim();
+    if (!newPass || newPass.length < 4) {
+      toast.error("La contraseña debe tener al menos 4 caracteres");
+      return;
+    }
+    setResetting(true);
+    try {
+      let updated: Customer = resetTarget;
+      if (!isMock) {
+        const res = await api<{ customer: Customer }>(`/api/users/${resetTarget.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ password: newPass }),
+        });
+        updated = res.customer;
+        setData((d) => d.map((c) => (c.id === updated.id ? updated : c)));
+      }
+      toast.success("Contraseña reseteada");
+      setResetTarget(null);
+      setReveal({
+        title: "Nueva contraseña generada",
+        client: updated.client,
+        username: updated.username,
+        password: newPass,
+        package: updated.package,
+        status: updated.status,
+        expiresAt: updated.expiresAt,
+        maxConnections: updated.maxConnections,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "No se pudo resetear";
+      toast.error(msg);
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -332,12 +443,17 @@ function UsersPage() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Crear línea</DialogTitle>
-                    <DialogDescription>Configura los datos del nuevo cliente.</DialogDescription>
+                    <DialogDescription>Configura los datos del nuevo cliente. La contraseña se mostrará una sola vez.</DialogDescription>
                   </DialogHeader>
                   <CustomerForm draft={draft} setDraft={setDraft} mode="create" />
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={saving}>Cancelar</Button>
-                    <Button onClick={create} disabled={saving || !draft.username.trim() || noBalance}>{noBalance ? "Sin créditos" : saving ? "Creando..." : "Crear"}</Button>
+                    <Button
+                      onClick={create}
+                      disabled={saving || noBalance || (!draft.autoCredentials && !draft.username.trim())}
+                    >
+                      {noBalance ? "Sin créditos" : saving ? "Creando..." : "Crear"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -404,6 +520,11 @@ function UsersPage() {
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
+                    {canWrite && (
+                      <Button size="icon" variant="ghost" title="Resetear contraseña" onClick={() => openReset(c)}>
+                        <KeyRound className="h-4 w-4 text-primary" />
+                      </Button>
+                    )}
                     {canWrite && (c.status === "active" ? (
                       <Button size="icon" variant="ghost" title="Suspender" onClick={() => patch(c.id, { status: "suspended" }, "Cliente suspendido")}>
                         <Pause className="h-4 w-4 text-warning" />
@@ -447,6 +568,45 @@ function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo reset contraseña */}
+      <Dialog open={!!resetTarget} onOpenChange={(v) => { if (!v) setResetTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resetear contraseña</DialogTitle>
+            <DialogDescription>
+              Cliente: <b>{resetTarget?.client ?? resetTarget?.username}</b> ·
+              usuario <code>{resetTarget?.username}</code>. La contraseña anterior se pierde definitivamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={resetAuto} onCheckedChange={(v) => setResetAuto(!!v)} />
+              Generar contraseña aleatoria segura
+            </label>
+            {!resetAuto && (
+              <div className="space-y-1.5">
+                <Label>Nueva contraseña</Label>
+                <Input
+                  type="text"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  placeholder="Mínimo 4 caracteres"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetTarget(null)} disabled={resetting}>Cancelar</Button>
+            <Button onClick={doReset} disabled={resetting}>
+              {resetting ? "Guardando..." : "Resetear y mostrar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal revelar credenciales (una sola vez) */}
+      <RevealDialog reveal={reveal} onClose={() => setReveal(null)} />
     </div>
   );
 }
@@ -459,27 +619,54 @@ function CustomerForm({
   setDraft: (d: DraftCustomer) => void;
   mode: "create" | "edit";
 }) {
+  const toggleAuto = (v: boolean) => {
+    if (v) {
+      setDraft({ ...draft, autoCredentials: true, username: draft.username || genUsername(), password: genPassword() });
+    } else {
+      setDraft({ ...draft, autoCredentials: false });
+    }
+  };
+
   return (
     <div className="grid gap-4 py-2 sm:grid-cols-2">
       <div className="space-y-1.5 sm:col-span-2">
         <Label>Nombre del cliente</Label>
         <Input value={draft.client} onChange={(e) => setDraft({ ...draft, client: e.target.value })} placeholder="Carlos Mendoza" />
       </div>
+
+      {mode === "create" && (
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <Checkbox checked={draft.autoCredentials} onCheckedChange={(v) => toggleAuto(!!v)} />
+          Generar acceso automático (usuario + contraseña seguros)
+        </label>
+      )}
+
       <div className="space-y-1.5">
         <Label>Usuario</Label>
         <div className="flex gap-2">
           <Input value={draft.username} disabled={mode === "edit"} onChange={(e) => setDraft({ ...draft, username: e.target.value })} />
           {mode === "create" && (
-            <Button type="button" variant="outline" size="icon" onClick={() => setDraft({ ...draft, ...genCredentials() })}>
+            <Button type="button" variant="outline" size="icon" title="Generar usuario" onClick={() => setDraft({ ...draft, username: genUsername() })}>
               <Sparkles className="h-4 w-4" />
             </Button>
           )}
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label>{mode === "edit" ? "Nueva contraseña (opcional)" : "Contraseña (opcional)"}</Label>
-        <Input value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} placeholder={mode === "edit" ? "Dejar vacío para no cambiar" : ""} />
+        <Label>{mode === "edit" ? "Nueva contraseña (opcional)" : "Contraseña"}</Label>
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            value={draft.password}
+            onChange={(e) => setDraft({ ...draft, password: e.target.value })}
+            placeholder={mode === "edit" ? "Dejar vacío para no cambiar" : "Se generará si queda vacío"}
+          />
+          <Button type="button" variant="outline" size="icon" title="Generar contraseña" onClick={() => setDraft({ ...draft, password: genPassword() })}>
+            <KeyRound className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+
       <div className="space-y-1.5">
         <Label>Paquete</Label>
         <Select value={draft.package} onValueChange={(v) => setDraft({ ...draft, package: v })}>
@@ -512,6 +699,80 @@ function CustomerForm({
         <Label>Notas</Label>
         <Input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Cliente VIP, observaciones..." />
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+function RevealDialog({ reveal, onClose }: { reveal: RevealCreds | null; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const summary = useMemo(() => {
+    if (!reveal) return "";
+    const exp = reveal.expiresAt ? new Date(reveal.expiresAt).toISOString().slice(0, 10) : "—";
+    return [
+      `Cliente: ${reveal.client ?? "—"}`,
+      `Usuario: ${reveal.username}`,
+      `Contraseña: ${reveal.password}`,
+      `Paquete: ${reveal.package}`,
+      `Estado: ${reveal.status}`,
+      `Máx. conexiones: ${reveal.maxConnections}`,
+      `Vence: ${exp}`,
+    ].join("\n");
+  }, [reveal]);
+
+  const doCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopied(true);
+      toast.success("Datos copiados al portapapeles");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  };
+
+  return (
+    <Dialog open={!!reveal} onOpenChange={(v) => { if (!v) { setCopied(false); onClose(); } }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{reveal?.title ?? "Credenciales"}</DialogTitle>
+          <DialogDescription>
+            Copia estos datos ahora. La contraseña <b>no se volverá a mostrar</b>.
+          </DialogDescription>
+        </DialogHeader>
+        {reveal && (
+          <div className="space-y-3 py-2">
+            <Row label="Cliente" value={reveal.client ?? "—"} />
+            <Row label="Usuario" value={reveal.username} mono />
+            <Row label="Contraseña" value={reveal.password} mono highlight />
+            <Row label="Paquete" value={reveal.package} />
+            <Row label="Estado" value={reveal.status} />
+            <Row label="Máx. conexiones" value={String(reveal.maxConnections)} />
+            <Row
+              label="Vence"
+              value={reveal.expiresAt ? new Date(reveal.expiresAt).toISOString().slice(0, 10) : "—"}
+            />
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={doCopy}>
+            {copied ? <><Check className="h-4 w-4" /> Copiado</> : <><Copy className="h-4 w-4" /> Copiar datos</>}
+          </Button>
+          <Button onClick={onClose}>Cerrar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Row({ label, value, mono, highlight }: { label: string; value: string; mono?: boolean; highlight?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className={`text-sm ${mono ? "font-mono" : ""} ${highlight ? "font-semibold text-primary" : ""}`}>
+        {value}
+      </span>
     </div>
   );
 }
